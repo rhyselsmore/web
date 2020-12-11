@@ -1,4 +1,4 @@
-var { Issuer, Strategy } = require('openid-client');
+var { Issuer, Strategy, generators } = require('openid-client');
 
 async function getClient(issuerUrl, clientId, clientSecret, callbackUriBase) {
   const issuer = await Issuer.discover(issuerUrl);
@@ -8,6 +8,7 @@ async function getClient(issuerUrl, clientId, clientSecret, callbackUriBase) {
     redirect_uris: [`${callbackUriBase}/auth/sso_callback`],
     post_logout_redirect_uris: [`${callbackUriBase}/auth/logout_callback`],
     token_endpoint_auth_method: 'client_secret_post',
+    response_types: ['code'],
   });
 }
 
@@ -33,10 +34,12 @@ const getStrategy = async (
     clientSecret,
     callbackUriBase
   );
+  const nonce = generators.nonce();
   const params = {
     scope,
     audience,
     response: ['userinfo'],
+    nonce,
   };
 
   return new Strategy({ client, params }, verify);
