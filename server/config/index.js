@@ -16,18 +16,36 @@ const readConfig = async () => {
 };
 
 const getAuthConfig = async () => {
-  let { auth } = await readConfig();
-  if (!auth) {
-    return { enabled: false };
-  }
+  let {
+    type,
+    issuer,
+    client_id,
+    client_secret,
+    audience,
+    callback_base_uri,
+    scope,
+  } = await readConfig();
+
+  const auth = {
+    isEnabled: true,
+    providers: [
+      {
+        type,
+        issuer,
+        client_id,
+        client_secret,
+        audience,
+        callback_base_uri,
+        scope,
+      },
+    ],
+  };
   return auth;
 };
 
 const getRoutingConfig = async () => {
-  let { routing } = await readConfig();
-  if (!routing) {
-    return { defaultToNamespace: null };
-  }
+  let { default_to_namespace } = await readConfig();
+  const routing = { default_to_namespace };
   return routing;
 };
 
