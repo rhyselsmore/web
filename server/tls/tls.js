@@ -1,6 +1,6 @@
 const grpc = require('grpc');
 const { readCredsFromCertFiles } = require('./read-creds-from-cert-files');
-const { readCredsFromYml } = require('./read-creds-from-yml-file');
+const { readCredsFromConfig } = require('./read-creds-from-config');
 const { compareCaseInsensitive } = require('../utils');
 
 const keyPath = process.env.TEMPORAL_TLS_KEY_PATH;
@@ -21,13 +21,12 @@ function getCredentials() {
       caPath,
     });
     return createSecure(pk, cert, ca, serverName, verifyHost);
-  } else if (configPath !== undefined) {
+  } else if (true) {
+    // always read TLS config from config file
     console.log(
       'establishing secure connection using TLS yml configuration...'
     );
-    const { pk, cert, ca, serverName, verifyHost } = readCredsFromYml({
-      configPath,
-    });
+    const { pk, cert, ca, serverName, verifyHost } = readCredsFromConfig();
     return createSecure(pk, cert, ca, serverName, verifyHost);
   } else {
     console.log('establishing insecure connection...');
