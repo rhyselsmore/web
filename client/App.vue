@@ -130,6 +130,8 @@ export default {
       }
       if (
         routing?.defaultToNamespace &&
+        (this.$route.params.namespace ||
+          this.$route.fullPath == '/namespaces') &&
         routing.defaultToNamespace !== this.$route.params.namespace
       ) {
         const { defaultToNamespace } = routing;
