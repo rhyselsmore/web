@@ -190,7 +190,7 @@ export default {
     <header class="top-bar">
       <a href="/namespaces" class="logo">
         <div v-html="logo"></div>
-        <span class="version">{{ version }}</span>
+        <!-- <span class="version">{{ version }}</span> disable in SaaS -->
       </a>
 
       <feature-flag name="environment-select">
