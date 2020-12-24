@@ -69,7 +69,7 @@ export default {
   async created() {
     await Promise.all([this.getCurrentUser(), this.getWebSettings()]);
     this.redirectIfApplicable();
-    await this.announceNewVersionIfExists();
+    // await this.announceNewVersionIfExists(); disable in SaaS
   },
   methods: {
     globalClick(e) {
