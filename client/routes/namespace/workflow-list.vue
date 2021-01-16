@@ -232,7 +232,7 @@ export default {
         status: { value: status },
       } = this;
 
-      if (status === 'OPEN') {
+      if (['OPEN', 'ALL'].includes(status)) {
         return null;
       }
 
@@ -299,13 +299,13 @@ export default {
         const queryOpen = { ...this.criteria, nextPageToken: this.npt };
         const queryClosed = { ...this.criteria, nextPageToken: this.nptAlt };
 
-        const { workflows: wfsOpen, nextPageToken: nptOpen } = await this.fetch(
+        let { workflows: wfsOpen, nextPageToken: nptOpen } = await this.fetch(
           `/api/namespaces/${namespace}/workflows/open`,
           queryOpen
         );
         this.npt = nptOpen;
 
-        const {
+        let {
           workflows: wfsClosed,
           nextPageToken: nptClosed,
         } = await this.fetch(
@@ -314,49 +314,51 @@ export default {
         );
         this.nptAlt = nptClosed;
 
-        // saturate diff in workflows between the max dates
-        // so both open and closed workflows are fetched until the same date
-        let maxOpen = maxBy(wfsOpen, (w) => moment(w.startTime));
-        let maxClosed = maxBy(wfsClosed, (w) => moment(w.startTime));
+        if (this.npt && this.nptAlt) {
+          // saturate diff in workflows between the max dates
+          // so both open and closed workflows are fetched until the same date
+          let maxOpen = maxBy(wfsOpen, (w) => moment(w.startTime));
+          let maxClosed = maxBy(wfsClosed, (w) => moment(w.startTime));
 
-        let nptDiff;
-        let wfsDiff = [];
-        let saturateOpen;
+          let nptDiff;
+          let saturateOpen;
 
-        if (maxOpen && maxClosed && maxOpen.startTime !== maxClosed.startTime) {
-          maxOpen = moment(maxOpen.startTime);
-          maxClosed = moment(maxClosed.startTime);
-          saturateOpen = maxOpen < maxClosed;
+          if (
+            maxOpen &&
+            maxClosed &&
+            maxOpen.startTime !== maxClosed.startTime
+          ) {
+            maxOpen = moment(maxOpen.startTime);
+            maxClosed = moment(maxClosed.startTime);
+            saturateOpen = maxOpen < maxClosed;
 
-          let [startTime, endTime] = saturateOpen
-            ? [maxOpen, maxClosed]
-            : [maxClosed, maxOpen];
-          startTime = startTime.add(1, 'milliseconds').toISOString();
-          endTime = endTime.add(1, 'milliseconds').toISOString();
-          const queryDiff = { ...this.criteria, startTime, endTime };
+            let [startTime, endTime] = saturateOpen
+              ? [maxOpen, maxClosed]
+              : [maxClosed, maxOpen];
+            startTime = startTime.add(1, 'seconds').toISOString();
+            endTime = endTime.add(1, 'seconds').toISOString();
+            const queryDiff = { ...this.criteria, startTime, endTime };
 
-          let diff = await this.fetch(
-            `/api/namespaces/${namespace}/workflows/${
-              saturateOpen ? 'open' : 'closed'
-            }`,
-            queryDiff
-          );
+            let diff = await this.fetch(
+              `/api/namespaces/${namespace}/workflows/${
+                saturateOpen ? 'open' : 'closed'
+              }`,
+              queryDiff
+            );
 
-          wfsDiff = diff.workflows;
-          nptDiff = diff.nextPageToken;
+            nptDiff = diff.nextPageToken;
 
-          if (saturateOpen === true) {
-            this.npt = nptDiff;
-          } else if (saturateOpen === false) {
-            this.nptAlt = nptDiff;
+            if (saturateOpen === true) {
+              this.npt = nptDiff;
+              wfsOpen = [...wfsOpen, ...diff.workflows];
+            } else if (saturateOpen === false) {
+              this.nptAlt = nptDiff;
+              wfsClosed = [...wfsClosed, ...diff.workflows];
+            }
           }
         }
 
-        workflows = orderBy(
-          [...wfsOpen, ...wfsClosed, ...wfsDiff],
-          'startTime',
-          ['desc']
-        );
+        workflows = [...wfsOpen, ...wfsClosed];
       }
 
       this.results = [...this.results, ...workflows];
