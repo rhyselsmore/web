@@ -5,10 +5,6 @@ WORKDIR /usr/build
 COPY package*.json ./
 RUN npm install --production
 
-# disable TLS ALPN extension for servers that don't support ALPN grpc-exp extension
-RUN rm -rf ./node_modules/grpc
-RUN npm install grpc@1.24.4 --build-from-source --grpc_alpn=false --production
-
 # Bundle app source
 COPY . .
 # Bundle the client code
