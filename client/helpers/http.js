@@ -1,3 +1,4 @@
+const PUBLIC_PATH = process.env.TEMPORAL_WEB_ROOT_PATH || '/';
 export default function http(fetch, url, o) {
   const opts = {
     credentials: 'same-origin',
@@ -19,6 +20,9 @@ export default function http(fetch, url, o) {
     }
   }
 
+  let path = PUBLIC_PATH.slice(0, -1);
+  fetchUrl = `${path}${fetchUrl}`
+
   return fetch(fetchUrl, opts).then(r =>
     r.status >= 200 && r.status < 300
       ? r.json().catch(() => {})
@@ -30,13 +34,24 @@ export default function http(fetch, url, o) {
 }
 
 http.post = function post(fetch, url, body) {
-  return http(fetch, url, {
+  let opts = {
     method: 'POST',
     body: JSON.stringify(body),
     headers: {
       'Content-Type': 'application/json',
     },
-  });
+  };
+  opts = addCsrf(opts);
+  return http(fetch, url, opts);
+};
+
+const addCsrf = (options) => {
+  const cookies = document.cookie.split(';');
+  const csrf = cookies.find(c=> c.includes('csrf-token'))
+  if (csrf && !options.headers['X-CSRF-TOKEN']) {
+    opts.headers['X-CSRF-TOKEN'] = csrf;
+  }
+  return options;
 };
 
 http.global = http.bind(null, window.fetch);
